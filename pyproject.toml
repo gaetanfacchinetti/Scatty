@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools", "wheel", "numpy", "Cython"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scatty"
+version = "0.1.0"
+description = "Python wrapper for C integration library using Cython"
+authors = [{name = "Gaétan Facchinetti", email = "gaetan.facchinetti@gmail.com"}, {name= "Nicolas Grimbaum-Yamamoto", email ="nicolas.grimbaum@ulb.be"}]
+readme = "README.md"
+dependencies = [] 
+
+[tool.setuptools.packages.find]
+where = ["src_py"]
+

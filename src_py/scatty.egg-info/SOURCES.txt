@@ -1,0 +1,12 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+src_c/cross_section.c
+src_c/integration.c
+src_py/scatty/__init__.py
+src_py/scatty/core.py
+src_py/scatty.egg-info/PKG-INFO
+src_py/scatty.egg-info/SOURCES.txt
+src_py/scatty.egg-info/dependency_links.txt
+src_py/scatty.egg-info/top_level.txt
