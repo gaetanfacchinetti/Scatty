@@ -1,15 +1,33 @@
 [build-system]
-requires = ["setuptools", "wheel", "numpy", "Cython"]
+requires = ["setuptools", "wheel", "Cython"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "scatty"
 version = "0.1.0"
-description = "Python wrapper for C integration library using Cython"
-authors = [{name = "Gaétan Facchinetti", email = "gaetan.facchinetti@gmail.com"}, {name= "Nicolas Grimbaum-Yamamoto", email ="nicolas.grimbaum@ulb.be"}]
+description = "Python wrapper for C functions using Cython"
 readme = "README.md"
-dependencies = [] 
+authors = [{name = "Gaétan Facchinetti", email = "gaetan.facchinetti@gmail.com"}, 
+           {name = "Nicolas Grimbaum-Yamamoto", email = "nicolas.grimbaum@ulb.be"}]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Operating System :: Unix",
+    "Operating System :: MacOS :: MacOS X",
+]
+keywords = ["physics", "cosmology", "scattering"]
+dependencies = [
+    "cython",
+    "numpy",
+]
+requires-python = ">=3.6"
 
-[tool.setuptools.packages.find]
-where = ["src_py"]
+[project.optional-dependencies]
+dev = []
+
+[project.urls]
+Homepage      = "https://github.com/gaetanfacchinetti/Scatty"
+PythonVersion = "https://github.com/gaetanfacchinetti/Scatty"
 

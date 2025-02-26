@@ -1,26 +1,75 @@
+import subprocess
+import os
+
 from setuptools import setup, Extension
 from Cython.Build import cythonize
-import numpy
 
-# Ensure absolute paths
-include_gsl_dir = "/usr/local/include"
-lib_gsl_dir = "/usr/local/lib"
+"""
+def main():
 
-ext_modules = [
-    Extension(
-        "scatty.libscatty",
-        sources=["src_c/cross_section.c", "src_c/integration.c"],
-        include_dirs=[numpy.get_include(), include_gsl_dir, "src_c"],
-        library_dirs=[lib_gsl_dir],
-        libraries=["gsl", "gslcblas", "m"],
-        language="c",
-        extra_compile_args=["-std=c11"],
-    )
-]
+    # go to where the project needs to be compiled
+    
+    os.chdir("./src/scatty/src/")
+
+    try:
+
+        if os.path.exists("libcscatty.so"):
+            os.remove("libcscatty.so")
+
+        subprocess.run(['make'], check=True)
+        print("make executed successfully.")
+
+        # Run the 'make' command with the desired target
+        subprocess.run(['make', 'clean'], check=True)
+        print("make clean executed successfully.")
+
+
+    except subprocess.CalledProcessError as e:
+        print("Error executing Makefile:", e)
+
+    # go back to the main project folder
+    os.chdir("../../../")
+    
+    # cytonize the cython code
+    cythonize("./src/scatty/wrapper.pyx", force = True)
+
+    # define the extension for the libraries
+    extension = Extension("scatty.wrapper", 
+                        sources = ["./src/scatty/wrapper.c"], 
+                        libraries = ["cscatty", "m"], 
+                        library_dirs=["./src/scatty/src/"],)
+    
+    setup(ext_modules=[extension], 
+          package_dir={'' : 'src'},  
+          packages=['scatty'], 
+          package_data= {'scatty' : ['data/*', 'src/*.h', 'src/*.so']},
+          include_package_data=True)
+
+
+if __name__ == "__main__":
+    main()
+"""
+
+from distutils.command.install import install as _install
+
+
+class install(_install):
+    def run(self):
+        os.chdir("./src/scatty/src/")
+        subprocess.run(['make', 'clean'], check=True)
+        subprocess.run(['make', 'cleanlib'], check=True)
+        subprocess.run(['make'], check=True)
+        subprocess.run(['make', 'clean'], check=True)
+        os.chdir("../../../")
+        _install.run(self)
+
 
 setup(
-    name="scatty",
-    version="0.1.0",
-    packages=["scatty"],
-    ext_modules=cythonize(ext_modules, compiler_directives={"language_level": "3"}),
+    name='scatty',
+    version='0.0.1',
+    package_dir={'' : 'src'},
+    packages=['scatty'],
+    package_data= {'scatty' : ['data/*', 'src/*.h', 'src/*.so']},
+    include_package_data=True,
+    cmdclass={'install': install},
 )

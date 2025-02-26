@@ -1,0 +1,6 @@
+build
+src/scatty/__pycache__
+src/scatty.egg-info
+src/scatty/src/libscatty.so
+src/scatty/build
+src/build
