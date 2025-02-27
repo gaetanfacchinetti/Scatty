@@ -14,10 +14,11 @@ def wrap(func_name, args, res) -> None:
     func.restype = res
 
 
-wrap('free_memory', [ctypes.POINTER(ctypes.c_double)], None)
+wrap('free_double_ptr', [ctypes.POINTER(ctypes.c_double)], None)
 
 wrap('coulomb_phase_shift', [ctypes.c_int, ctypes.c_double], ctypes.c_double)
 wrap('coulomb_phase_shift_arr', [ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.c_int], ctypes.POINTER(ctypes.c_double))
+wrap('coulomb_phase_shift_grid', [ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_double), ctypes.c_int, ctypes.c_int], ctypes.POINTER(ctypes.c_double))
 
 
     
