@@ -10,6 +10,13 @@
  */
 void free_double_ptr(double* ptr);
 
+/**
+ * @brief free pointers to int
+ * 
+ * @param ptr pointer to free. 
+ */
+void free_int_ptr(int* ptr);
+
 
 
 #endif // TOOLS_H

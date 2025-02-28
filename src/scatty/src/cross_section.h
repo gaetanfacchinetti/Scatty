@@ -2,6 +2,7 @@
 #define CROSS_SECTION_H
 
 #include <math.h>
+#include <string.h>
 #include "tools.h"
 
 #define GAMMA_E  0.57721566490153286;
@@ -65,6 +66,10 @@ double* coulomb_phase_shift_grid(int* l, double* zeta, int l_size, int zeta_size
  */
 double n_coulomb_transfer_cross_section(int l, double zeta);
 
+
+double* n_coulomb_transfer_cross_section_grid(int *l, double* zeta, int l_size, int zeta_size);
+
+double transfer_factor(int l, double delta_l, double delta_lm1);
 double mu_I(double y);
 
 
