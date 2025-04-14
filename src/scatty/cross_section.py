@@ -38,6 +38,7 @@ def coulomb_phase_shift(l: int | np.ndarray, zeta: float | np.ndarray) -> np.nda
 
 
 
+# normalised Coulomb transfer cross-section
 def n_coulomb_transfer_cross_section(l: int | np.ndarray, zeta: float | np.ndarray) -> np.ndarray:
     
     not_arr = np.array([], dtype=int)
@@ -68,6 +69,14 @@ def n_coulomb_transfer_cross_section(l: int | np.ndarray, zeta: float | np.ndarr
     #result_array = result_array.squeeze(axis=tuple(not_arr))
 
     return result_array
+
+
+# normalised Coulomb transfer cross-section
+def r_chi_coulomb(l: int, zeta_r: float, w_r: float) -> np.ndarray:
+    
+    # call the C function and convert C array back to NumPy array
+    return LIB.r_chi_coulomb(int(l), zeta_r, w_r)
+
 
 
 def test_integral():

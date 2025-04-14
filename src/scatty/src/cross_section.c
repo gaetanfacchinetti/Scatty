@@ -123,12 +123,35 @@ double* n_coulomb_transfer_cross_section_grid(int* l, double* zeta, int l_size, 
 }
 
 
-double r_chi_coulomb_integrand(double y, int l, double zeta_r, double w_r)
-{
-    return 0.0;
-}
 
 double mu_I(double y)
 {
     return ((y-1) + exp(-2*y)*(y+1)) / (y*y);
+}
+
+// NEED to change this function in terms of a grid of l values for efficiency
+// NEED to check if this function is giving the correct result
+double r_chi_coulomb(int l, double zeta_r, double w_r)
+{
+
+    int err_0, err_1, n = 1000;
+
+    // set the weights and roots
+    double x[n], w[n];
+    err_0 = set_gauss_legendre_points_and_weights(n, x, w);
+    err_1 = set_root_and_weights_scale(n, fmax(w_r*(-5.0 + w_r), 0.0), w_r*(5.0 + w_r), x, w, false);
+
+    if (err_0 < 0 || err_1 < 0){
+        return -99.0;
+    }
+
+    double res = 0, part1 = 0, part2 = 0;
+
+    for (int i = 0; i < n; i++){
+        part1 = exp(-(x[i] - w_r*w_r)*(x[i] - w_r*w_r) / 2.0 / w_r / w_r);
+        part2 = n_coulomb_transfer_cross_section(l, w_r*zeta_r/x[i]);
+        res = res +  part1 * part2 * mu_I(x[i]) / sqrt(2*M_PI) / w_r / w_r * w[i];
+    }
+
+    return res;
 }

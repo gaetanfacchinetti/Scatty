@@ -21,4 +21,6 @@ wrap('coulomb_phase_shift_arr', [ctypes.c_int, ctypes.POINTER(ctypes.c_double), 
 wrap('coulomb_phase_shift_grid', [ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_double), ctypes.c_int, ctypes.c_int], ctypes.POINTER(ctypes.c_double))
 
 wrap('n_coulomb_transfer_cross_section_grid', [ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_double), ctypes.c_int, ctypes.c_int], ctypes.POINTER(ctypes.c_double))
+wrap('r_chi_coulomb', [ctypes.c_int, ctypes.c_double, ctypes.c_double], ctypes.c_double)
+
 wrap('test_integral', [], ctypes.c_double)

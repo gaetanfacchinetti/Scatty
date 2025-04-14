@@ -60,8 +60,6 @@ int set_gauss_legendre_points_and_weights(int n, double* x, double* w) {
 }
 
 
-
-
 // Function to compute Gauss-Legendre quadrature points and weights
 int set_root_and_weights_scale(int n, double a, double b, double* x, double* w, bool in_log) {
     
@@ -100,22 +98,22 @@ double test_function(double x){
 
 double test_integral(){
     
-    int err_0, err_1;
+    int err_0, err_1, n = 10;
 
     // set the weights and roots
-    double x[10], w[10];
-    err_0 = set_gauss_legendre_points_and_weights(10, x, w);
-    err_1 = set_root_and_weights_scale(10, 0.01, 100.0, x, w, true);
+    double x[n], w[n];
+    err_0 = set_gauss_legendre_points_and_weights(n, x, w);
+    err_1 = set_root_and_weights_scale(n, 0.01, 100.0, x, w, true);
 
     if (err_0 < 0 || err_1 < 0){
         return -99.0;
     }
 
     double res = 0;
-    for (int i = 0; i < 10; i++){
+    for (int i = 0; i < n; i++){
         res = res + test_function(x[i]) * w[i];
     }
-    
+
     return res;
 
 }
