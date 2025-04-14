@@ -68,3 +68,10 @@ def n_coulomb_transfer_cross_section(l: int | np.ndarray, zeta: float | np.ndarr
     #result_array = result_array.squeeze(axis=tuple(not_arr))
 
     return result_array
+
+
+def test_integral():
+    
+    res = LIB.test_integral()
+    return res
+    

@@ -63,22 +63,59 @@ int set_gauss_legendre_points_and_weights(int n, double* x, double* w) {
 
 
 // Function to compute Gauss-Legendre quadrature points and weights
-int set_root_and_weights_scale(int n, double a, double b, double* x, double* w, bool log) {
+int set_root_and_weights_scale(int n, double a, double b, double* x, double* w, bool in_log) {
     
-    int m = (n + 1) / 2;
-    
-    double yi = 0;
-
-    //double 
-
-    for (int i = 0; i < m; i++){
+    if (in_log == true){
         
-        yi = ((b-a)* x[i] + a + b)/2.0;
-        x[i] = yi;
-        x[n - i - 1] = -yi;
+        // first check that the boundaries make sense
+        if ((a < 0) || (b < 0)) {
+            return -1;
+        }
+        
+        // redefine the roots and weights
+        for (int i = 0; i < n; i++){
+            x[i] = pow(b, (1.0 + x[i])/2.0) * pow(a, (1.0 - x[i])/2.0);
+            w[i] = x[i] * log(b/a)/2.0 * w[i];
+            
+        }
+    } else {
 
-        w[i] = w[n - i - 1] = (b-a)/2.0 * w[i];
+        // redefine the roots and weights
+        for (int i = 0; i < n; i++){
+            w[i] = (b-a)/2.0 * w[i];
+            x[i] = ((b-a) * x[i] + a + b)/2.0;
+        }
     }
 
     return 0;
+}
+
+
+// Test functions for the implementation of the integral
+// Follow this example to compute your own integral
+
+double test_function(double x){
+    return 1/x + 1/(x*x);
+}
+
+double test_integral(){
+    
+    int err_0, err_1;
+
+    // set the weights and roots
+    double x[10], w[10];
+    err_0 = set_gauss_legendre_points_and_weights(10, x, w);
+    err_1 = set_root_and_weights_scale(10, 0.01, 100.0, x, w, true);
+
+    if (err_0 < 0 || err_1 < 0){
+        return -99.0;
+    }
+
+    double res = 0;
+    for (int i = 0; i < 10; i++){
+        res = res + test_function(x[i]) * w[i];
+    }
+    
+    return res;
+
 }
