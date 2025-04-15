@@ -106,7 +106,7 @@ double* n_coulomb_transfer_cross_section_grid(int* l, double* zeta, int l_size, 
     double* delta_lm1 = coulomb_phase_shift_grid(lm1, zeta, l_size+1, zeta_size);
     
     // then compute the array of normalised l-wave cross-section 
-    double* s_l     = (double*)malloc(l_size * zeta_size * sizeof(double));
+    double* s_l = (double*)malloc(l_size * zeta_size * sizeof(double));
     if (!s_l) return NULL;
 
     for (int i = 0; i < l_size; i++) {
@@ -123,35 +123,87 @@ double* n_coulomb_transfer_cross_section_grid(int* l, double* zeta, int l_size, 
 }
 
 
+double* n_coulomb_ur_transfer_cross_section_arr(int*l, int l_size)
+{
+    double* s_l = (double*)malloc(l_size * sizeof(double));
+    if (!s_l) return NULL;
+
+    s_l[0] = pow(GAMMA_E, 2);
+
+    // initalise the digamma function at 1 (l=0, l+1=1)
+    double psi = - GAMMA_E;
+
+    for (int i = 1; i < l_size; i++){
+        // psi(1+l) = psi(l) + 1/l
+        psi = psi + 1/l[i];
+        s_l[i] = psi*(psi+2);
+    } 
+
+    return s_l;
+}
+
+
 
 double mu_I(double y)
 {
     return ((y-1) + exp(-2*y)*(y+1)) / (y*y);
 }
 
-// NEED to change this function in terms of a grid of l values for efficiency
-// NEED to check if this function is giving the correct result
-double r_chi_coulomb(int l, double zeta_r, double w_r)
+
+
+double* r_chi_coulomb_arr(int* l, double zeta_r, double w_r, int l_size, int n)
 {
-
-    int err_0, err_1, n = 1000;
-
+    // --------------------------
     // set the weights and roots
+    int err_0, err_1;
     double x[n], w[n];
     err_0 = set_gauss_legendre_points_and_weights(n, x, w);
     err_1 = set_root_and_weights_scale(n, fmax(w_r*(-5.0 + w_r), 0.0), w_r*(5.0 + w_r), x, w, false);
+    if (err_0 < 0 || err_1 < 0) return NULL;
 
-    if (err_0 < 0 || err_1 < 0){
-        return -99.0;
+
+    // --------------------------
+    // prepare the integration
+
+    // get the grid of values on which to evaluate the cross-section
+    double* zeta = (double*)malloc(n*sizeof(double));
+    if (!zeta) return NULL;
+
+    for (int j=0; j< n; j++) 
+        zeta[j] = w_r * zeta_r / x[j];
+
+    // get the values of s_l we need to integrate over
+    double* s_l = n_coulomb_transfer_cross_section_grid(l, zeta, l_size, n);
+
+    // preparing the returned array
+    double* r_l = (double*)malloc(l_size * sizeof(double));
+    if (!r_l) return NULL;
+
+    // ----------------------------
+    // compute the integral
+    double prob = 0;
+
+    // loop on the value of l
+    for (int i = 0; i < l_size; i++) {
+
+        // initalise the returned array to 0
+        r_l[i] = 0;
+
+        // loop to compute the integral
+        for (int j = 0; j < n; j++){
+            prob = exp(-(x[j] - w_r*w_r)*(x[j] - w_r*w_r) / 2.0 / w_r / w_r) / sqrt(2*M_PI) / w_r / w_r * w[j];
+            r_l[i] = r_l[i] +  prob * s_l[i * n + j] * mu_I(x[j]);
+        }
     }
 
-    double res = 0, part1 = 0, part2 = 0;
+    // ---------------------
+    // freeing memory
+    free_double_ptr(zeta);
+    free_double_ptr(s_l);
 
-    for (int i = 0; i < n; i++){
-        part1 = exp(-(x[i] - w_r*w_r)*(x[i] - w_r*w_r) / 2.0 / w_r / w_r);
-        part2 = n_coulomb_transfer_cross_section(l, w_r*zeta_r/x[i]);
-        res = res +  part1 * part2 * mu_I(x[i]) / sqrt(2*M_PI) / w_r / w_r * w[i];
-    }
-
-    return res;
+    return r_l;
 }
+
+
+
+

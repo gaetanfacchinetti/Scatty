@@ -72,10 +72,26 @@ def n_coulomb_transfer_cross_section(l: int | np.ndarray, zeta: float | np.ndarr
 
 
 # normalised Coulomb transfer cross-section
-def r_chi_coulomb(l: int, zeta_r: float, w_r: float) -> np.ndarray:
-    
+def r_chi_coulomb(l: int | np.ndarray, zeta_r: float, w_r: float, n = 1000) -> np.ndarray:
+
+    not_arr = np.array([], dtype=int)
+
+    if isinstance(l, int):
+        not_arr = np.append(not_arr, 0)
+        l = np.array([l], dtype=np.int32)
+   
+    l_size    = len(l)
+
+    # convert NumPy array to ctypes array
+    l_ctypes    = np.array(l, dtype=np.int32).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
+
     # call the C function and convert C array back to NumPy array
-    return LIB.r_chi_coulomb(int(l), zeta_r, w_r)
+    result_ptr   = LIB.r_chi_coulomb_arr(l_ctypes, zeta_r, w_r, l_size, n)
+    result_array = np.copy(np.ctypeslib.as_array(result_ptr, shape=(l_size,)))
+
+    LIB.free_double_ptr(result_ptr)
+    
+    return result_array
 
 
 
