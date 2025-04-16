@@ -72,6 +72,7 @@ double n_coulomb_transfer_cross_section(int l, double zeta);
 double* n_coulomb_transfer_cross_section_grid(int *l, double* zeta, int l_size, int zeta_size);
 
 double* n_coulomb_ur_transfer_cross_section_arr(int*l, int l_size);
+double* r_chi_coulomb_ur_grid(int*l, double* w_r, int l_size, int w_size);
 
 double transfer_factor(int l, double delta_l, double delta_lm1);
 

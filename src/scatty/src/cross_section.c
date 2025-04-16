@@ -84,6 +84,7 @@ double transfer_factor(int l, double delta_l, double delta_lm1) {
     return sin(delta_l) * ( (1+l) * sin(delta_l) + l * sin(delta_l - 2*delta_lm1) );
 }
 
+
 double n_coulomb_transfer_cross_section(int l, double zeta)
 {
     // only compute the phase shift once and get the adjacent values fast
@@ -123,7 +124,8 @@ double* n_coulomb_transfer_cross_section_grid(int* l, double* zeta, int l_size, 
 }
 
 
-double* n_coulomb_ur_transfer_cross_section_arr(int*l, int l_size)
+// s_l for zeta = 0
+double* n_coulomb_ur_transfer_cross_section_arr(int* l, int l_size)
 {
     double* s_l = (double*)malloc(l_size * sizeof(double));
     if (!s_l) return NULL;
@@ -135,7 +137,7 @@ double* n_coulomb_ur_transfer_cross_section_arr(int*l, int l_size)
 
     for (int i = 1; i < l_size; i++){
         // psi(1+l) = psi(l) + 1/l
-        psi = psi + 1/l[i];
+        psi = psi + 1.0/l[i];
         s_l[i] = psi*(psi+2);
     } 
 
@@ -204,6 +206,32 @@ double* r_chi_coulomb_arr(int* l, double zeta_r, double w_r, int l_size, int n)
     return r_l;
 }
 
+
+// NEED TO BE CHECKED AGAIN
+double* r_chi_coulomb_ur_grid(int*l, double* w_r, int l_size, int w_size)
+{
+    // get the values of s_l we need to integrate over
+    double* s_l = n_coulomb_ur_transfer_cross_section_arr(l, l_size);
+
+    double* r_l = (double*)malloc(l_size * w_size * sizeof(double));
+    if (!r_l) return NULL; // handle memory allocation failure
+
+    double part1 = 0, part2 = 0;
+
+    for (int i = 0; i < l_size; i++) {
+        for (int j = 0; j < 0; j++){
+            part1 = sqrt(M_PI/2.0) * erf(w_r[j]/sqrt(2.0));
+            part2 = - w_r[j] * exp(-w_r[j]*w_r[j]/2.0);
+            r_l[i * w_size + j] = s_l[i]  * sqrt(2.0/M_PI) / pow(w_r[j], 3) * ( part1 + part2) ;
+        }
+    }
+
+    // ---------------------
+    // freeing memory
+    free_double_ptr(s_l);
+
+    return r_l;
+}
 
 
 
