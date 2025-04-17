@@ -142,7 +142,7 @@ def r_chi_coulomb_ur(l: int | np.ndarray, w_r: float | np.ndarray) -> np.ndarray
     l_ctypes    = np.array(l, dtype=np.int32).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
 
     # call the C function and convert C array back to NumPy array
-    result_ptr   = LIB.n_coulomb_transfer_cross_section_grid(l_ctypes, w_r_ctypes, l_size, w_r_size)
+    result_ptr   = LIB.r_chi_coulomb_ur_grid(l_ctypes, w_r_ctypes, l_size, w_r_size)
     result_array = np.copy(np.ctypeslib.as_array(result_ptr, shape=(l_size, w_r_size,)))
     
     # free the result pointer

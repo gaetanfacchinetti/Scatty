@@ -125,20 +125,30 @@ double* n_coulomb_transfer_cross_section_grid(int* l, double* zeta, int l_size, 
 
 
 // s_l for zeta = 0
+// l array should be in increasing order (but not necessarily continous)
 double* n_coulomb_ur_transfer_cross_section_arr(int* l, int l_size)
 {
     double* s_l = (double*)malloc(l_size * sizeof(double));
     if (!s_l) return NULL;
 
-    s_l[0] = pow(GAMMA_E, 2);
+    int m = l[l_size - 1], j = 0;
 
-    // initalise the digamma function at 1 (l=0, l+1=1)
+    if (l[0] == 0){
+        s_l[j] = pow(GAMMA_E, 2);
+        j = j+1;
+    }
+
+    // initialise the digamma function at 1 (l=0, l+1=1)
     double psi = - GAMMA_E;
 
-    for (int i = 1; i < l_size; i++){
-        // psi(1+l) = psi(l) + 1/l
-        psi = psi + 1.0/l[i];
-        s_l[i] = psi*(psi+2);
+    for (int i = 1; i <= m; i++){
+        // psi(1+l) = psi(l) + 1/i
+        psi = psi + 1.0/i;
+
+        if (i == l[j]){
+            s_l[j] = psi*(psi+2.0);
+            j = j+1;
+        }
     } 
 
     return s_l;
@@ -207,7 +217,6 @@ double* r_chi_coulomb_arr(int* l, double zeta_r, double w_r, int l_size, int n)
 }
 
 
-// NEED TO BE CHECKED AGAIN
 double* r_chi_coulomb_ur_grid(int*l, double* w_r, int l_size, int w_size)
 {
     // get the values of s_l we need to integrate over
@@ -218,11 +227,14 @@ double* r_chi_coulomb_ur_grid(int*l, double* w_r, int l_size, int w_size)
 
     double part1 = 0, part2 = 0;
 
-    for (int i = 0; i < l_size; i++) {
-        for (int j = 0; j < 0; j++){
-            part1 = sqrt(M_PI/2.0) * erf(w_r[j]/sqrt(2.0));
-            part2 = - w_r[j] * exp(-w_r[j]*w_r[j]/2.0);
-            r_l[i * w_size + j] = s_l[i]  * sqrt(2.0/M_PI) / pow(w_r[j], 3) * ( part1 + part2) ;
+    for (int j = 0; j < w_size; j++){
+        
+        part1 = erf(w_r[j]/sqrt(2.0));
+        part2 = - sqrt(2.0/M_PI) * w_r[j] * exp(-w_r[j]*w_r[j]/2.0);
+        
+        for (int i = 0; i < l_size; i++) {
+            r_l[i * w_size + j] = s_l[i] * (part1 + part2)/ pow(w_r[j], 3);
+            //r_l[i * w_size + j] = s_l[i] ;//* (part1 + part2)/ pow(w_r[j], 3);
         }
     }
 
