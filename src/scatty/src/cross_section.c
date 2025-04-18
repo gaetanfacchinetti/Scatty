@@ -1,34 +1,43 @@
 #include "cross_section.h"
 
-double coulomb_phase_shift(int l, double zeta)
+
+// PRECISION NEED TO BE CHECKED
+double coulomb_phase_shift(int l, double m_zeta)
 {
 
     // convention
     if (l == -1) return 0.0;
 
     // first compute delta for l = 0
-    double delta_0 = - zeta * GAMMA_E;
+    float zeta = (float) m_zeta;
+    float delta_0 = - zeta * GAMMA_E;
     
-    double new_term = 0;
+    float new_term = 0;
     int m = 0;
 
     do {
-        new_term = ( atan(zeta/(m+1.0)) - zeta / (m+1.0) );
+        new_term = ( atanf(zeta/(m+1.0)) - zeta / (m+1.0) );
         delta_0 = delta_0 - new_term;
         m = m+1;
 
-    } while (m < 10000 && fabs(new_term/delta_0) > 1e-3);
+    } while (m < 10000 && fabs(new_term/delta_0) > 1e-7);
     
     if (l == 0)
         return delta_0;
 
     // if l > 0 need to add more terms
-    double delta_l = delta_0;
+    float delta_l = delta_0;
+    float x = 0, add = 0;
 
-    for (m=1; m <=l; m++)
-        delta_l = delta_l + atan(zeta/(1.0*m));
+    // NEED TO BE CHECKED
+    for (m=1; m <=l; m++){
+        x = zeta/(1.0*m);
+        add = x < 0.01 ? x : atanf(x);
+        //add = atanf(x);
+        delta_l = delta_l + add;
+    }
 
-    return delta_l;
+    return (double) delta_l;
 }
 
 
@@ -160,7 +169,6 @@ double mu_I(double y)
 {
     return ((y-1) + exp(-2*y)*(y+1)) / (y*y);
 }
-
 
 
 double* r_chi_coulomb_arr(int* l, double zeta_r, double w_r, int l_size, int n)
