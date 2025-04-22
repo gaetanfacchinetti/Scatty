@@ -3,7 +3,7 @@ CFLAGS = -Wall -Wextra -O3 -std=c11 -fPIC
 LDFLAGS = -shared
 OUTPUT = libscatty.so
 
-SRC = integration.c cross_section.c tools.c rates.c
+SRC = integration.c cross_section.c tools.c rates.c stubs.c cmplx.c cgamma.c clog.c
 OBJ = $(SRC:.c=.o)
 
 all: $(OUTPUT)

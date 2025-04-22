@@ -1,44 +1,52 @@
 #include "cross_section.h"
-
+#include "complex.h"
 
 // PRECISION NEED TO BE CHECKED
-double coulomb_phase_shift(int l, double m_zeta)
+double coulomb_phase_shift(int l, double zeta)
 {
 
     // convention
     if (l == -1) return 0.0;
 
-    // first compute delta for l = 0
-    float zeta = (float) m_zeta;
-    float delta_0 = - zeta * GAMMA_E;
+    // use cephes library for precision and rapidity
+    double res = creal(  clog( cgamma(1.0 + l + zeta*I) / cgamma(1.0 + l - zeta*I) ) / (2.0*I)  );
     
-    float new_term = 0;
-    int m = 0;
+    // if cephes fails use a more time consuming method
+    if (!(isnan(res))){
+        return res;
+    } else {
 
-    do {
-        new_term = ( atanf(zeta/(m+1.0)) - zeta / (m+1.0) );
-        delta_0 = delta_0 - new_term;
-        m = m+1;
+        // first compute delta for l = 0
+        double delta_0 = - zeta * GAMMA_E;
+        
+        float new_term = 0;
+        int m = 0;
 
-    } while (m < 10000 && fabs(new_term/delta_0) > 1e-7);
-    
-    if (l == 0)
-        return delta_0;
+        do {
+            new_term = ( atan(zeta/(m+1.0)) - zeta / (m+1.0) );
+            delta_0 = delta_0 - new_term;
+            m = m+1;
 
-    // if l > 0 need to add more terms
-    float delta_l = delta_0;
-    float x = 0, add = 0;
+        } while (m < 100000 && fabs(new_term/delta_0) > 1e-12);
+        
+        if (l == 0)
+            return delta_0;
 
-    // NEED TO BE CHECKED
-    for (m=1; m <=l; m++){
-        x = zeta/(1.0*m);
-        add = x < 0.01 ? x : atanf(x);
-        //add = atanf(x);
-        delta_l = delta_l + add;
+        // if l > 0 need to add more terms
+        double delta_l = delta_0;
+        double x = 0, add = 0;
+
+        for (m=1; m <=l; m++){
+            delta_l = delta_l + zeta/(1.0*m);
+        }
+
+        return delta_l;
     }
 
-    return (double) delta_l;
+    
 }
+
+
 
 
 double* coulomb_phase_shift_arr(int l, double* zeta, int zeta_size)
@@ -171,16 +179,21 @@ double mu_I(double y)
 }
 
 
-double* r_chi_coulomb_arr(int* l, double zeta_r, double w_r, int l_size, int n)
+double* r_chi_coulomb_arr(int* l, double zeta_r, double w_r, int l_size, double* x, double* w, int n)
 {
     // --------------------------
     // set the weights and roots
-    int err_0, err_1;
-    double x[n], w[n];
-    err_0 = set_gauss_legendre_points_and_weights(n, x, w);
-    err_1 = set_root_and_weights_scale(n, fmax(w_r*(-5.0 + w_r), 0.0), w_r*(5.0 + w_r), x, w, false);
-    if (err_0 < 0 || err_1 < 0) return NULL;
+    double* x_loc = (double*)malloc(n * sizeof(double));
+    double* w_loc = (double*)malloc(n * sizeof(double));
 
+    if (!x_loc) return NULL;
+    if (!w_loc) return NULL;
+
+    memcpy(x_loc, x, n * sizeof(double));
+    memcpy(w_loc, w, n * sizeof(double));
+
+    int err = set_root_and_weights_scale(n, fmax(w_r*(-5.0 + w_r), 0.0), w_r*(5.0 + w_r), x_loc, w_loc, false);
+    if (err < 0) return NULL;
 
     // --------------------------
     // prepare the integration
@@ -190,38 +203,82 @@ double* r_chi_coulomb_arr(int* l, double zeta_r, double w_r, int l_size, int n)
     if (!zeta) return NULL;
 
     for (int j=0; j< n; j++) 
-        zeta[j] = w_r * zeta_r / x[j];
+        zeta[j] = w_r * zeta_r / x_loc[j];
 
     // get the values of s_l we need to integrate over
     double* s_l = n_coulomb_transfer_cross_section_grid(l, zeta, l_size, n);
 
     // preparing the returned array
-    double* r_l = (double*)malloc(l_size * sizeof(double));
+    double* r_l = (double*)calloc(l_size,  sizeof(double));
     if (!r_l) return NULL;
 
     // ----------------------------
     // compute the integral
-    double prob = 0;
+    double prob = 0.0, mu = 0.0;
 
-    // loop on the value of l
-    for (int i = 0; i < l_size; i++) {
+       // loop to compute the integral
+    for (int j = 0; j < n; j++){
 
-        // initalise the returned array to 0
-        r_l[i] = 0;
+        prob = exp(- pow(x_loc[j]/w_r - w_r, 2) / 2.0) / sqrt(2*M_PI) / w_r / w_r  * w_loc[j];
+        mu = mu_I(x_loc[j]);
+        
+        // loop on the value of l
+        for (int i = 0; i < l_size; i++) {
+            r_l[i] += prob * s_l[i * n + j] * mu;
+        }
 
-        // loop to compute the integral
-        for (int j = 0; j < n; j++){
-            prob = exp(-(x[j] - w_r*w_r)*(x[j] - w_r*w_r) / 2.0 / w_r / w_r) / sqrt(2*M_PI) / w_r / w_r * w[j];
-            r_l[i] = r_l[i] +  prob * s_l[i * n + j] * mu_I(x[j]);
+    }
+
+    // ---------------------
+    // free memory
+    free_double_ptr(zeta);
+    free_double_ptr(s_l);
+    free_double_ptr(x_loc);
+    free_double_ptr(w_loc);
+
+    return r_l;
+}
+
+
+double* r_chi_coulomb_grid(int *l, double* zeta_r, double* w_r, int l_size, int zeta_size, int w_size, int n)
+{
+
+    double* x = (double*)malloc(n * sizeof(double));
+    double* w = (double*)malloc(n * sizeof(double));
+
+    if (!x) return NULL;
+    if (!w) return NULL;
+
+    int err = set_gauss_legendre_points_and_weights(n, x, w);
+    if (err < 0) return NULL;
+
+    double* r_chi = (double*)malloc(l_size * zeta_size * w_size * sizeof(double));
+    if (!r_chi) return NULL; // handle memory allocation failure
+
+    double* r_chi_arr;
+    
+    for (int j = 0; j < zeta_size; j++){
+
+        for (int k = 0; k < w_size; k++){
+
+            // call the function array
+            r_chi_arr = r_chi_coulomb_arr(l, zeta_r[j], w_r[k], l_size, x, w, n);
+               
+            for (int i = 0; i < l_size; i++) {
+                r_chi[(i * zeta_size + j) * w_size + k] = r_chi_arr[i];
+
+            }
         }
     }
 
     // ---------------------
-    // freeing memory
-    free_double_ptr(zeta);
-    free_double_ptr(s_l);
+    // free memory
+    free_double_ptr(r_chi_arr);
+    free_double_ptr(x);
+    free_double_ptr(w);
 
-    return r_l;
+    return r_chi;
+    
 }
 
 
@@ -247,7 +304,7 @@ double* r_chi_coulomb_ur_grid(int*l, double* w_r, int l_size, int w_size)
     }
 
     // ---------------------
-    // freeing memory
+    // free memory
     free_double_ptr(s_l);
 
     return r_l;
