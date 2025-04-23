@@ -1,7 +1,7 @@
 #include "cross_section.h"
 #include "complex.h"
 
-// PRECISION NEED TO BE CHECKED
+
 double coulomb_phase_shift(int l, double zeta)
 {
 
@@ -34,7 +34,6 @@ double coulomb_phase_shift(int l, double zeta)
 
         // if l > 0 need to add more terms
         double delta_l = delta_0;
-        double x = 0, add = 0;
 
         for (m=1; m <=l; m++){
             delta_l = delta_l + zeta/(1.0*m);
@@ -48,18 +47,30 @@ double coulomb_phase_shift(int l, double zeta)
 
 
 
-
-double* coulomb_phase_shift_arr(int l, double* zeta, int zeta_size)
+double* coulomb_phase_shift_arr(int* l, double zeta, int l_size)
 {
-    double* delta_l = (double*)malloc(zeta_size * sizeof(double));
+    double* delta_l = (double*)malloc(l_size * sizeof(double));
     if (!delta_l) return NULL; // handle memory allocation failure
 
+    int i_init = 0;
+
+    // special case where the series starts with lm1
+    if (l[0] == -1) {
+        i_init = 1;
+        delta_l[0] =  zeta > 0 ? 0.0 : NAN;
+    }
+        
     // first get the values for the minimum l
     // assumes the values of l are given in ascending order
-    for (int j = 0; j < zeta_size ; j++) {
-        delta_l[j] = coulomb_phase_shift(l, zeta[j]);
+    delta_l[i_init] = zeta > 0 ? coulomb_phase_shift(l[i_init], zeta) : NAN;
+
+  
+    // then keeps increasing for highest values of l
+    // values of l must be given as a contiguous list
+    for (int i = i_init + 1; i < l_size; i++) {
+        delta_l[i] = zeta > 0 ? delta_l[i-1] +  atan(zeta/(1.0*l[i])) : NAN;
     }
-            
+
     return delta_l;
 }
 
@@ -75,21 +86,21 @@ double* coulomb_phase_shift_grid(int* l, double* zeta, int l_size, int zeta_size
     if (l[0] == -1) {
         i_init = 1;
         for (int j = 0; j < zeta_size; j++) {
-            delta_l[j] = 0.0;
+            delta_l[j] =  zeta[j] > 0 ? 0.0 : NAN;
         }
     }
         
     // first get the values for the minimum l
     // assumes the values of l are given in ascending order
     for (int j = 0; j < zeta_size; j++) {
-        delta_l[i_init * zeta_size + j] = coulomb_phase_shift(l[i_init], zeta[j]);
+        delta_l[i_init * zeta_size + j] = zeta[j] > 0 ? coulomb_phase_shift(l[i_init], zeta[j]) : NAN;
     }
   
     // then keeps increasing for highest values of l
     // values of l must be given as a contiguous list
     for (int i = i_init + 1; i < l_size; i++) {
         for (int j = 0; j < zeta_size; j++){
-            delta_l[i * zeta_size + j] = delta_l[(i-1)*zeta_size + j] +  atan(zeta[j]/(1.0*l[i]));
+            delta_l[i * zeta_size + j] = zeta[j] > 0 ? delta_l[(i-1)*zeta_size + j] +  atan(zeta[j]/(1.0*l[i])) : NAN;
         }
     }
 
@@ -110,6 +121,33 @@ double n_coulomb_transfer_cross_section(int l, double zeta)
     
     return transfer_factor(l, delta_l, delta_lm1) / zeta / zeta;
 }
+
+double* n_coulomb_transfer_cross_section_arr(int* l, double zeta, int l_size)
+{
+    // first get the values of the phase shifts
+    int* lm1 = (int*)malloc((l_size+1) * sizeof(int));
+    if (!lm1) return NULL;
+
+    lm1[0] = l[0]-1;
+    memmove(lm1 + 1, l, l_size * sizeof(int));
+
+    double* delta_lm1 = coulomb_phase_shift_arr(lm1, zeta, l_size+1);
+    
+    // then compute the array of normalised l-wave cross-section 
+    double* s_l = (double*)malloc(l_size * sizeof(double));
+    if (!s_l) return NULL;
+
+    for (int i = 0; i < l_size; i++) {
+        s_l[i] = transfer_factor(l[i], delta_lm1[(i+1)], delta_lm1[i]) / zeta / zeta;
+    }
+
+    // free the arrays of ls and deltas
+    free_int_ptr(lm1);
+    free_double_ptr(delta_lm1);
+
+    return s_l;
+}
+
 
 
 double* n_coulomb_transfer_cross_section_grid(int* l, double* zeta, int l_size, int zeta_size)
@@ -216,7 +254,7 @@ double* r_chi_coulomb_arr(int* l, double zeta_r, double w_r, int l_size, double*
     // compute the integral
     double prob = 0.0, mu = 0.0;
 
-       // loop to compute the integral
+    // loop to compute the integral
     for (int j = 0; j < n; j++){
 
         prob = exp(- pow(x_loc[j]/w_r - w_r, 2) / 2.0) / sqrt(2*M_PI) / w_r / w_r  * w_loc[j];
@@ -257,6 +295,7 @@ double* r_chi_coulomb_grid(int *l, double* zeta_r, double* w_r, int l_size, int 
 
     double* r_chi_arr;
     
+    // NEED TO REARRANGE THE ORDER FOR FASTER EVALUATION
     for (int j = 0; j < zeta_size; j++){
 
         for (int k = 0; k < w_size; k++){
@@ -312,3 +351,87 @@ double* r_chi_coulomb_ur_grid(int*l, double* w_r, int l_size, int w_size)
 
 
 
+
+// r_chi_l computed from a Monte-Carlo method
+double* r_chi_coulomb_mc_arr(int* l, double zeta_r, double w_r, int l_size, double* x, int n)
+{
+
+    // --------------------------
+    // prepare the integration
+
+    double y = 0.0;
+
+    // get the values of s_l we need to integrate over
+    // double* s_l = n_coulomb_transfer_cross_section_grid(l, zeta, l_size, n);
+
+    // preparing the returned array
+    double* r_l = (double*)calloc(l_size,  sizeof(double));
+    if (!r_l) return NULL;
+
+    // ----------------------------
+    // compute the integral
+    double prob = 0.0, mu = 0.0;
+    double* s_l = NULL;
+
+    // loop to compute the integral
+    for (int j = 0; j < n; j++){
+
+        y = w_r*w_r + w_r*x[j];
+        s_l = n_coulomb_transfer_cross_section_arr(l, w_r * zeta_r / y, l_size);
+            
+        // loop on the value of l
+        for (int i = 0; i < l_size; i++){
+            
+            r_l[i] +=  y > 0 ? s_l[i] * mu_I(y) / w_r  / n : 0.0;
+
+        }
+
+    }
+
+    // ---------------------
+    // free memory
+    free_double_ptr(s_l);
+
+    return r_l;
+}
+
+
+
+double* r_chi_coulomb_mc_grid(int *l, double* zeta_r, double* w_r, int l_size, int zeta_size, int w_size, int n)
+{
+
+    double* x = (double*)malloc(n * sizeof(double));
+    if (!x) return NULL;
+
+    draw_gauss_monte_carlo_points(n, x, 0.0, 1.0);
+
+    double* r_chi = (double*)malloc(l_size * zeta_size * w_size * sizeof(double));
+    if (!r_chi) return NULL; // handle memory allocation failure
+
+    double prob = 0.0, mu = 0.0, y = 0.0;
+    double* s_l = NULL;
+    
+    for (int j = 0; j < zeta_size; j++){
+        for (int k = 0; k < w_size; k++){
+            for (int m = 0; m < n; m++){ 
+
+                y = w_r[k] * (w_r[k] + x[m]);
+                s_l = n_coulomb_transfer_cross_section_arr(l, w_r[k] * zeta_r[j] / y, l_size);
+                    
+                for (int i = 0; i < l_size; i++){
+                    // loop on the value of l
+                    r_chi[(j * w_size + k) * l_size + i] +=  (y > 0 ? s_l[i] * mu_I(y) / w_r[k]  / n : 0.0);
+
+                }
+            }
+        }
+    }
+
+    // ---------------------
+    // free memory
+    free_double_ptr(x);
+    free_double_ptr(s_l);
+
+    return r_chi;
+    
+}

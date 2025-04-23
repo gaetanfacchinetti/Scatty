@@ -26,4 +26,7 @@ wrap('n_coulomb_ur_transfer_cross_section_arr', [ctypes.POINTER(ctypes.c_int), c
 wrap('r_chi_coulomb_grid', [ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_int,  ctypes.c_int,  ctypes.c_int, ctypes.c_int], ctypes.POINTER(ctypes.c_double))
 wrap('r_chi_coulomb_ur_grid', [ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_double), ctypes.c_int, ctypes.c_int], ctypes.POINTER(ctypes.c_double))
 
+
+wrap('r_chi_coulomb_mc_grid', [ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_int,  ctypes.c_int,  ctypes.c_int, ctypes.c_int], ctypes.POINTER(ctypes.c_double))
+
 wrap('test_integral', [], ctypes.c_double)

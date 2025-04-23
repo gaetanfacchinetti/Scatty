@@ -24,6 +24,8 @@
 double coulomb_phase_shift(int l, double zeta);
 
 
+double* coulomb_phase_shift_arr(int* l, double zeta, int l_size);
+
 /**
  * @brief Phase shift of the Coulomb potential (for l and zeta = alpha / v_rel) 
  *        where l and zeta are arrays (l being an ascending contiguous list of integers)
@@ -54,7 +56,7 @@ double* coulomb_phase_shift_grid(int* l, double* zeta, int l_size, int zeta_size
  */
 double n_coulomb_transfer_cross_section(int l, double zeta);
 
-
+double* n_coulomb_transfer_cross_section_arr(int* l, double zeta, int l_size);
 double* n_coulomb_transfer_cross_section_grid(int *l, double* zeta, int l_size, int zeta_size);
 
 double* n_coulomb_ur_transfer_cross_section_arr(int*l, int l_size);
@@ -89,5 +91,8 @@ double* r_chi_coulomb_arr(int* l, double zeta_r, double w_r, int l_size, double*
  */
 double* r_chi_coulomb_grid(int *l, double* zeta_r, double* w_r, int l_size, int zeta_size, int w_size, int n);
 
+
+double* r_chi_coulomb_mc_arr(int* l, double zeta_r, double w_r, int l_size, double* x, int n);
+double* r_chi_coulomb_mc_grid(int *l, double* zeta_r, double* w_r, int l_size, int zeta_size, int w_size, int n);
 
 #endif // CROSS_SECTION_H

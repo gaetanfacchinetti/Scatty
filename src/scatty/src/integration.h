@@ -8,15 +8,17 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdbool.h>
+#include <time.h>
 
 
 void legendre(int n, double x, double* P, double* dP);
 int set_gauss_legendre_points_and_weights(int n, double* x, double* w);
 int set_root_and_weights_scale(int n, double a, double b, double* x, double* w, bool in_log);
 
+void draw_gauss_monte_carlo_points(int n, double* x, double mu, double sigma);
 
 // Test functions
-double test_function();
+double test_function(double x);
 double test_integral();
 
 #endif // INTEGRATION_H

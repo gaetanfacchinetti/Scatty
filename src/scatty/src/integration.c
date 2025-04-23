@@ -5,7 +5,7 @@
 void legendre(int n, double x, double* P, double* dP) {
     
     double P0 = 1.0, P1 = x, Pk = 0;
-    double dP0 = 0.0, dP1 = 1.0, dPk = 0;
+    double dP1 = 1.0, dPk = 0;
     
     for (int k = 2; k <= n; k++) {
 
@@ -14,7 +14,7 @@ void legendre(int n, double x, double* P, double* dP) {
         
         P0 = P1;
         P1 = Pk;
-        dP0 = dP1;
+        // dP0 = dP1;
         dP1 = dPk;
     }
     
@@ -31,7 +31,6 @@ int set_gauss_legendre_points_and_weights(int n, double* x, double* w) {
     
     // define a maximal bound for the newton solver
     int max_iter = 1000000, iter=0;
-
 
     for (int i = 0; i < m; i++) {
         // Initial guess for the root using an approximation
@@ -86,6 +85,29 @@ int set_root_and_weights_scale(int n, double a, double b, double* x, double* w, 
     }
 
     return 0;
+}
+
+
+// uses the Box-Muller transformation
+void draw_gauss_monte_carlo_points(int n, double* x, double mu, double sigma)
+{
+    // set the seed for the rand() function
+    srand(time(0));
+
+    double u, v;
+
+    for (int i = 0; i < n; i = i+2){
+        
+        u = (double) rand() / RAND_MAX;
+        v = (double) rand() / RAND_MAX;
+    
+        x[i] = mu + sigma * sqrt(-2.0 * log(u)) * cos(2.0 * M_PI * v);
+        
+        if (i+1 < n){
+            x[i+1] = mu + sigma * sqrt(-2.0 * log(u)) * sin(2.0 * M_PI * v);
+        }
+    }
+
 }
 
 
