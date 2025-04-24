@@ -1,240 +1,106 @@
 import numpy as np
-import ctypes
+
+from .wrapper import LIB, wrap_args
 
 
-from .wrapper import LIB
+def coulomb_phase_shift(l: int | np.ndarray, 
+                        zeta: float | np.ndarray) -> np.ndarray:
+    """
+    Phase shift induced by scattering in coulomb potential
 
+    Parameters
+    ----------
+    l : int | np.ndarray
+        index of the partial wave expansion
+    zeta : float | np.ndarray
+        dimensionless ration of the coupling strength 
+        over the velocity of the scattered particle alpha / v
 
-def coulomb_phase_shift(l: int | np.ndarray, zeta: float | np.ndarray) -> np.ndarray:
+    Returns
+    -------
+    np.ndarray
+    """
 
-    not_arr = np.array([], dtype=int)
-
-    if isinstance(l, int):
-        not_arr = np.append(not_arr, 0)
-        l = np.array([l], dtype=np.int32)
-
-    if isinstance(zeta, float):
-        not_arr = np.append(not_arr, 1)
-        zeta = np.array([zeta])
-
-   
-    zeta_size = len(zeta)
-    l_size    = len(l)
-
-    # convert NumPy array to ctypes array
-    zeta_ctypes = zeta.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-    l_ctypes    = np.array(l, dtype=np.int32).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
+    # prepare the arguments to wrap
+    sizes, collapsed, args = wrap_args(l, zeta)
 
     # call the C function and convert C array back to NumPy array
-    result_ptr   = result_ptr = LIB.coulomb_phase_shift_grid(l_ctypes, zeta_ctypes, l_size, zeta_size)
-    result_array = np.copy(np.ctypeslib.as_array(result_ptr, shape=(l_size, zeta_size,)))
+    result_ptr   = LIB.coulomb_phase_shift_grid(*args, *sizes)
+    result_array = np.copy(np.ctypeslib.as_array(result_ptr, shape=sizes))
     
     # free the result pointer
     LIB.free_double_ptr(result_ptr)
 
-    result_array = result_array.squeeze(axis=tuple(not_arr))
-
-    return result_array
+    return result_array.squeeze(axis=collapsed)
 
 
 
 # normalised Coulomb transfer cross-section
-def n_coulomb_transfer_cross_section(l: int | np.ndarray, zeta: float | np.ndarray) -> np.ndarray:
-    
-    not_arr = np.array([], dtype=int)
+def n_coulomb_transfer_cross_section(l: int | np.ndarray, 
+                                     zeta: float | np.ndarray) -> np.ndarray:
+    """
+    Transfer cross-sectrion induced by scattering in coulomb potential
 
-    if isinstance(l, int):
-        not_arr = np.append(not_arr, 0)
-        l = np.array([l], dtype=np.int32)
+    Parameters
+    ----------
+    l : int | np.ndarray
+        index of the partial wave expansion
+    zeta : float | np.ndarray
+        dimensionless ratio of the coupling strength 
+        over the velocity of the scattered particle alpha / v
 
-    if isinstance(zeta, float):
-        not_arr = np.append(not_arr, 1)
-        zeta = np.array([zeta])
+    Returns
+    -------
+    np.ndarray
+    """
 
-   
-    zeta_size = len(zeta)
-    l_size    = len(l)
-
-    # convert NumPy array to ctypes array
-    zeta_ctypes = zeta.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-    l_ctypes    = np.array(l, dtype=np.int32).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
+    # prepare the arguments to wrap
+    sizes, collapsed, args = wrap_args(l, zeta)
 
     # call the C function and convert C array back to NumPy array
-    result_ptr   = LIB.n_coulomb_transfer_cross_section_grid(l_ctypes, zeta_ctypes, l_size, zeta_size)
-    result_array = np.copy(np.ctypeslib.as_array(result_ptr, shape=(l_size, zeta_size,)))
+    result_ptr   = LIB.n_coulomb_transfer_cross_section_grid(*args, *sizes)
+    result_array = np.copy(np.ctypeslib.as_array(result_ptr, shape=sizes))
     
     # free the result pointer
     LIB.free_double_ptr(result_ptr)
 
-    return result_array
+    return result_array.squeeze(axis=collapsed)
 
 
 
 
 # normalised Coulomb transfer cross-section (for zeta = 0, alpha /  v -> 0)
 def n_coulomb_ur_transfer_cross_section(l: int | np.ndarray) -> np.ndarray:
+    """
+    Transfer cross-sectrion induced by scattering in coulomb potential
+    with small coupling constant zeta 
+
+    Parameters
+    ----------
+    l : int | np.ndarray
+        index of the partial wave expansion
+    zeta : float | np.ndarray
+        dimensionless ratio of the coupling strength 
+        over the velocity of the scattered particle alpha / v
+
+    Returns
+    -------
+    np.ndarray
+    """
     
-    not_arr = np.array([], dtype=int)
-
-    if isinstance(l, int):
-        not_arr = np.append(not_arr, 0)
-        l = np.array([l], dtype=np.int32)
-
-   
-    l_size    = len(l)
-
-    # convert NumPy array to ctypes array
-    l_ctypes    = np.array(l, dtype=np.int32).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-
+    # prepare the arguments to wrap
+    sizes, collapsed, args = wrap_args(l)
+    
     # call the C function and convert C array back to NumPy array
-    result_ptr   = LIB.n_coulomb_ur_transfer_cross_section_arr(l_ctypes, l_size)
-    result_array = np.copy(np.ctypeslib.as_array(result_ptr, shape=(l_size,)))
+    result_ptr   = LIB.n_coulomb_ur_transfer_cross_section_arr(*args, *sizes)
+    result_array = np.copy(np.ctypeslib.as_array(result_ptr, shape=sizes))
     
     # free the result pointer
     LIB.free_double_ptr(result_ptr)
 
-    result_array = result_array.squeeze(axis=tuple(not_arr))
-
-    return result_array
+    return result_array.squeeze(axis=collapsed)
 
 
-
-'''
-# normalised Coulomb transfer cross-section
-def r_chi_coulomb(l: int | np.ndarray, zeta_r: float, w_r: float, n = 1000) -> np.ndarray:
-
-    not_arr = np.array([], dtype=int)
-
-    if isinstance(l, int):
-        not_arr = np.append(not_arr, 0)
-        l = np.array([l], dtype=np.int32)
-   
-    l_size    = len(l)
-
-    # convert NumPy array to ctypes array
-    l_ctypes    = np.array(l, dtype=np.int32).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-
-    # call the C function and convert C array back to NumPy array
-    result_ptr   = LIB.r_chi_coulomb_arr(l_ctypes, zeta_r, w_r, l_size, n)
-    result_array = np.copy(np.ctypeslib.as_array(result_ptr, shape=(l_size,)))
-
-    LIB.free_double_ptr(result_ptr)
-
-    result_array = result_array.squeeze(axis=tuple(not_arr))
-    
-    return result_array
-'''
-
-
-# normalised Coulomb transfer cross-section
-def r_chi_coulomb(l: int | np.ndarray, zeta_r: float | np.ndarray, w_r: float | np.ndarray, n = 1000) -> np.ndarray:
-
-    not_arr = np.array([], dtype=int)
-
-    if isinstance(l, int):
-        not_arr = np.append(not_arr, 0)
-        l = np.array([l], dtype=np.int32)
-
-    if isinstance(zeta_r, float):
-        not_arr = np.append(not_arr, 1)
-        zeta_r = np.array([zeta_r])
-
-    if isinstance(w_r, float):
-        not_arr = np.append(not_arr, 2)
-        w_r = np.array([w_r])
-
-   
-    zeta_r_size = len(zeta_r)
-    w_r_size    = len(w_r)
-    l_size      = len(l)
-
-    # convert NumPy array to ctypes array
-    zeta_r_ctypes = zeta_r.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-    w_r_ctypes    = w_r.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-    l_ctypes      = np.array(l, dtype=np.int32).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-
-    # call the C function and convert C array back to NumPy array
-    result_ptr   = LIB.r_chi_coulomb_grid(l_ctypes, zeta_r_ctypes, w_r_ctypes, l_size, zeta_r_size, w_r_size, n)
-    result_array = np.copy(np.ctypeslib.as_array(result_ptr, shape=(l_size, zeta_r_size, w_r_size,)))
-
-    LIB.free_double_ptr(result_ptr)
-
-    result_array = result_array.squeeze(axis=tuple(not_arr))
-    
-    return result_array
-
-
-
-# normalised Coulomb transfer cross-section
-def r_chi_coulomb_ur(l: int | np.ndarray, w_r: float | np.ndarray) -> np.ndarray:
-    
-    not_arr = np.array([], dtype=int)
-
-    if isinstance(l, int):
-        not_arr = np.append(not_arr, 0)
-        l = np.array([l], dtype=np.int32)
-
-    if isinstance(w_r, float):
-        not_arr = np.append(not_arr, 1)
-        w_r = np.array([w_r])
-
-   
-    w_r_size = len(w_r)
-    l_size    = len(l)
-
-    # convert NumPy array to ctypes array
-    w_r_ctypes = w_r.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-    l_ctypes    = np.array(l, dtype=np.int32).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-
-    # call the C function and convert C array back to NumPy array
-    result_ptr   = LIB.r_chi_coulomb_ur_grid(l_ctypes, w_r_ctypes, l_size, w_r_size)
-    result_array = np.copy(np.ctypeslib.as_array(result_ptr, shape=(l_size, w_r_size,)))
-    
-    # free the result pointer
-    LIB.free_double_ptr(result_ptr)
-
-    result_array = result_array.squeeze(axis=tuple(not_arr))
-
-    return result_array
-
-
-# normalised Coulomb transfer cross-section
-def r_chi_coulomb_mc(l: int | np.ndarray, zeta_r: float | np.ndarray, w_r: float | np.ndarray, n = 1000) -> np.ndarray:
-
-    not_arr = np.array([], dtype=int)
-
-    if isinstance(l, int):
-        not_arr = np.append(not_arr, 0)
-        l = np.array([l], dtype=np.int32)
-
-    if isinstance(zeta_r, float):
-        not_arr = np.append(not_arr, 1)
-        zeta_r = np.array([zeta_r])
-
-    if isinstance(w_r, float):
-        not_arr = np.append(not_arr, 2)
-        w_r = np.array([w_r])
-
-   
-    zeta_r_size = len(zeta_r)
-    w_r_size    = len(w_r)
-    l_size      = len(l)
-
-    # convert NumPy array to ctypes array
-    zeta_r_ctypes = zeta_r.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-    w_r_ctypes    = w_r.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-    l_ctypes      = np.array(l, dtype=np.int32).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-
-    # call the C function and convert C array back to NumPy array
-    result_ptr   = LIB.r_chi_coulomb_mc_grid(l_ctypes, zeta_r_ctypes, w_r_ctypes, l_size, zeta_r_size, w_r_size, n)
-    result_array = np.copy(np.ctypeslib.as_array(result_ptr, shape=(zeta_r_size, w_r_size, l_size,)))
-
-    LIB.free_double_ptr(result_ptr)
-
-    result_array = np.transpose(result_array, (2, 0, 1))
-    result_array = result_array.squeeze(axis=tuple(not_arr))
-    
-    return result_array
 
 
 def test_integral():

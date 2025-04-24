@@ -46,7 +46,7 @@ extern double cabs ( double complex z );
 extern double hypot ( double x, double y );
 
 /* Prototypes for clog.c.
-   This is how you declare complex things in the new C language.  */
+   This is how you declare complex things in the new C language. */
 extern double complex clog ( double complex z );
 extern double complex cexp ( double complex z );
 extern double complex csqrt ( double complex z );
@@ -63,7 +63,8 @@ extern double complex ccosh ( double complex z );
 extern double complex cacosh ( double complex z );
 extern double complex ctanh ( double complex z );
 extern double complex catanh ( double complex z );
-extern double complex cpow (double complex a, double complex z);
+extern double complex cpow (double complex a, double complex z); 
+
 
 /* These functions might be used if the compiler were to generate
    subroutine calls.  But their names would be spelled some other way.  */

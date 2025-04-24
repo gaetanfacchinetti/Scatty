@@ -1,8 +1,27 @@
+/** ----------------------------------------------------------------------
+ * This file is part of Scatty.
+ *
+ * Copyright (c) 2024, Gaétan Facchinetti
+ *
+ * Scatty is free software: you can redistribute it and/or modify it 
+ * under the terms of the GNU General Public License as published by 
+ * the Free Software Foundation, either version 3 of the License, or any 
+ * later version. Scatty is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU 
+ * General Public License along with NNERO. 
+ * If not, see <https://www.gnu.org/licenses/>.
+ * ----------------------------------------------------------------------
+ */
+
 #include "integration.h"
 
 
 // Function to compute the Legendre polynomial P_n(x) and its derivative
-void legendre(int n, double x, double* P, double* dP) {
+void legendre(int32_t n, double x, double* P, double* dP) {
     
     double P0 = 1.0, P1 = x, Pk = 0;
     double dP1 = 1.0, dPk = 0;
@@ -24,7 +43,7 @@ void legendre(int n, double x, double* P, double* dP) {
 
 
 // Function to compute Gauss-Legendre quadrature points and weights
-int set_gauss_legendre_points_and_weights(int n, double* x, double* w) {
+int set_gauss_legendre_points_and_weights(int32_t n, double* x, double* w) {
     
     int m = (n + 1) / 2; // Only need to compute half the roots due to symmetry
     double xi = 0, P = 0, dP = 0, dx=0;
@@ -32,7 +51,7 @@ int set_gauss_legendre_points_and_weights(int n, double* x, double* w) {
     // define a maximal bound for the newton solver
     int max_iter = 1000000, iter=0;
 
-    for (int i = 0; i < m; i++) {
+    for (int32_t i = 0; i < m; i++) {
         // Initial guess for the root using an approximation
         xi = cos(M_PI * (i + 0.75) / (n + 0.5));
 
@@ -60,7 +79,7 @@ int set_gauss_legendre_points_and_weights(int n, double* x, double* w) {
 
 
 // Function to compute Gauss-Legendre quadrature points and weights
-int set_root_and_weights_scale(int n, double a, double b, double* x, double* w, bool in_log) {
+int set_root_and_weights_scale(int32_t n, double a, double b, double* x, double* w, bool in_log) {
     
     if (in_log == true){
         
@@ -70,7 +89,7 @@ int set_root_and_weights_scale(int n, double a, double b, double* x, double* w, 
         }
         
         // redefine the roots and weights
-        for (int i = 0; i < n; i++){
+        for (int32_t i = 0; i < n; i++){
             x[i] = pow(b, (1.0 + x[i])/2.0) * pow(a, (1.0 - x[i])/2.0);
             w[i] = x[i] * log(b/a)/2.0 * w[i];
             
@@ -78,7 +97,7 @@ int set_root_and_weights_scale(int n, double a, double b, double* x, double* w, 
     } else {
 
         // redefine the roots and weights
-        for (int i = 0; i < n; i++){
+        for (int32_t i = 0; i < n; i++){
             w[i] = (b-a)/2.0 * w[i];
             x[i] = ((b-a) * x[i] + a + b)/2.0;
         }
@@ -89,14 +108,14 @@ int set_root_and_weights_scale(int n, double a, double b, double* x, double* w, 
 
 
 // uses the Box-Muller transformation
-void draw_gauss_monte_carlo_points(int n, double* x, double mu, double sigma)
+void draw_gauss_monte_carlo_points(int32_t n, double* x, double mu, double sigma)
 {
     // set the seed for the rand() function
     srand(time(0));
 
     double u, v;
 
-    for (int i = 0; i < n; i = i+2){
+    for (int32_t i = 0; i < n; i = i+2){
         
         u = (double) rand() / RAND_MAX;
         v = (double) rand() / RAND_MAX;
@@ -132,7 +151,7 @@ double test_integral(){
     }
 
     double res = 0;
-    for (int i = 0; i < n; i++){
+    for (int32_t i = 0; i < n; i++){
         res = res + test_function(x[i]) * w[i];
     }
 

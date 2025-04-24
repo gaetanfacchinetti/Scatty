@@ -4,7 +4,7 @@ LDFLAGS = -shared
 OUTPUT = libscatty.so
 EXEC = scatty
 
-SRC = integration.c cross_section.c tools.c rates.c stubs.c cmplx.c cgamma.c clog.c
+SRC = integration.c cross_section.c tools.c rates.c cephes/stubs.c cephes/cmplx.c cephes/cgamma.c cephes/clog.c
 MAIN_SRC = scatty.c
 OBJ = $(SRC:.c=.o)
 MAIN_OBJ = $(MAIN_SRC:.c=.o)
